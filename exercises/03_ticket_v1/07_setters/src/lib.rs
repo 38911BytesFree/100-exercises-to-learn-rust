@@ -44,6 +44,33 @@ impl Ticket {
     pub fn status(&self) -> &String {
         &self.status
     }
+
+    pub fn set_title(&mut self, title:String) {
+        if title.is_empty() {
+            panic!("Title cannot be empty");
+        }
+        if title.len() > 50 {
+            panic!("Title cannot be longer than 50 characters");
+        }
+        self.title = title
+    }
+
+    pub fn set_description(&mut self, desc:String) {
+        if desc.is_empty() {
+            panic!("Description cannot be empty");
+        }
+        if desc.len() > 500 {
+            panic!("Description cannot be longer than 500 characters");
+        }
+        self.description = desc
+    }
+
+    pub fn set_status(&mut self, status: String) {
+        if status != "To-Do" && status != "In Progress" && status != "Done" {
+            panic!("Only `To-Do`, `In Progress`, and `Done` statuses are allowed");
+        }
+        self.status = status
+    }
 }
 
 #[cfg(test)]
