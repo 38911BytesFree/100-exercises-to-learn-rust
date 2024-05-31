@@ -13,7 +13,7 @@ pub struct TicketStore {
     counter: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TicketId(u64);
 
 #[derive(Clone, Debug, PartialEq)]
@@ -40,7 +40,7 @@ pub enum Status {
 impl TicketStore {
     pub fn new() -> Self {
         Self {
-            tickets: todo!(),
+            tickets: BTreeMap::new(),
             counter: 0,
         }
     }
@@ -54,18 +54,30 @@ impl TicketStore {
             description: ticket.description,
             status: Status::ToDo,
         };
-        todo!();
+        self.tickets.insert(id, ticket);
         id
     }
 
     pub fn get(&self, id: TicketId) -> Option<&Ticket> {
-        todo!()
+        self.tickets.get(&id)
     }
 
     pub fn get_mut(&mut self, id: TicketId) -> Option<&mut Ticket> {
-        todo!()
+        self.tickets.get_mut(&id)
     }
 }
+
+
+impl IntoIterator for TicketStore {
+    type Item = (TicketId, Ticket);
+    type IntoIter = <BTreeMap<TicketId, Ticket> as IntoIterator>::IntoIter;
+    // type IntoIter = BTreeMap<TicketId, Ticket>::IntoIter; - error ambiguous (mut & non-mut)
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.tickets.into_iter()
+    }
+}
+
 
 impl Index<TicketId> for TicketStore {
     type Output = Ticket;
@@ -124,7 +136,7 @@ mod tests {
             assert_eq!(ticket.status, Status::InProgress);
         }
 
-        let ids: Vec<TicketId> = (&store).into_iter().map(|t| t.id).collect();
+        let ids: Vec<TicketId> = (store).into_iter().map(|t| t.0).collect();
         let sorted_ids = {
             let mut v = ids.clone();
             v.sort();

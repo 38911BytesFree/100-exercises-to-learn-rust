@@ -1,6 +1,6 @@
 // TODO: Implement `IndexMut<&TicketId>` and `IndexMut<TicketId>` for `TicketStore`.
 
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 use ticket_fields::{TicketDescription, TicketTitle};
 
 #[derive(Clone)]
@@ -57,6 +57,11 @@ impl TicketStore {
     pub fn get(&self, id: TicketId) -> Option<&Ticket> {
         self.tickets.iter().find(|&t| t.id == id)
     }
+
+    pub fn get_mut(&mut self, id: TicketId) -> Option<&mut Ticket> {
+        let index = self.tickets.iter().position(|t| t.id == id).unwrap();
+        Some(&mut self.tickets[index])
+    }
 }
 
 impl Index<TicketId> for TicketStore {
@@ -72,6 +77,20 @@ impl Index<&TicketId> for TicketStore {
 
     fn index(&self, index: &TicketId) -> &Self::Output {
         &self[*index]
+    }
+}
+
+impl IndexMut<TicketId> for TicketStore {
+
+    fn index_mut(&mut self, index: TicketId) -> &mut Ticket {
+        self.get_mut(index).unwrap()
+    }
+}
+
+impl IndexMut<&TicketId> for TicketStore {
+
+    fn index_mut(&mut self, index: &TicketId) -> &mut Ticket {
+        &mut self[*index]
     }
 }
 

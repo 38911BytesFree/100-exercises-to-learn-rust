@@ -5,14 +5,20 @@
 use std::io::{Read, Write};
 use tokio::net::TcpListener;
 
+use log::debug;
+
 pub async fn echo(listener: TcpListener) -> Result<(), anyhow::Error> {
     loop {
         let (socket, _) = listener.accept().await?;
-        let mut socket = socket.into_std()?;
-        socket.set_nonblocking(false)?;
-        let mut buffer = Vec::new();
-        socket.read_to_end(&mut buffer)?;
-        socket.write_all(&buffer)?;
+        tokio::task::spawn_blocking(|| {
+            let mut socket = socket.into_std().unwrap();
+            socket.set_nonblocking(false).unwrap();
+            let mut buffer = Vec::new();
+            debug!("here ");
+            socket.read_to_end(&mut buffer).unwrap();
+            debug!("read done");
+            socket.write_all(&buffer).unwrap();
+        });
     }
 }
 
@@ -24,6 +30,10 @@ mod tests {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::task::JoinSet;
 
+    use env_logger;
+    use log::debug;
+    use log::LevelFilter;
+
     async fn bind_random() -> (TcpListener, SocketAddr) {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
@@ -32,6 +42,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_echo() {
+        env_logger::builder()
+            .filter_level(LevelFilter::Debug)
+            .init();
+
+        print!("test start");
         let (listener, addr) = bind_random().await;
         tokio::spawn(echo(listener));
 
@@ -44,6 +59,7 @@ mod tests {
         let mut join_set = JoinSet::new();
 
         for request in requests {
+            debug!("{request}");
             join_set.spawn(async move {
                 let mut socket = tokio::net::TcpStream::connect(addr).await.unwrap();
                 let (mut reader, mut writer) = socket.split();
